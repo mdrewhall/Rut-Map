@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Georgia WMA Deer Rut Finder</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <h1>🦌 Georgia WMA Deer Rut Finder</h1>
+            <p>Find the best Wildlife Management Areas for deer hunting based on rut timing</p>
+        </header>
+
+        <main class="app-main">
+            <section class="date-selection">
+                <h2>Select Your Hunting Dates</h2>
+                <div class="date-inputs">
+                    <div class="input-group">
+                        <label for="start-date">Start Date:</label>
+                        <input type="date" id="start-date" name="start-date">
+                    </div>
+                    <div class="input-group">
+                        <label for="end-date">End Date:</label>
+                        <input type="date" id="end-date" name="end-date">
+                    </div>
+                </div>
+                <button id="find-wmas" class="find-btn">Find Best WMAs</button>
+            </section>
+
+            <section class="results" id="results-section" style="display: none;">
+                <h2>Recommended WMAs</h2>
+                <div id="results-container"></div>
+            </section>
+
+            <section class="rut-calendar">
+                <h2>Georgia Deer Rut Calendar</h2>
+                <div class="calendar-legend">
+                    <div class="legend-item">
+                        <span class="color-box early-rut"></span>
+                        <span>Early Rut (Oct 13-26)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="color-box mid-rut"></span>
+                        <span>Mid Rut (Oct 27 - Nov 16)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="color-box late-rut"></span>
+                        <span>Late Rut (Nov 17 - Dec 28)</span>
+                    </div>
+                </div>
+                <div id="rut-calendar-display"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #2c5f2d 0%, #4a7c59 100%);
+    color: #333;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.app-header {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 30px 20px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.app-header h1 {
+    font-size: 2.5rem;
+    color: #2c5f2d;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.app-header p {
+    font-size: 1.1rem;
+    color: #666;
+}
+
+.app-main {
+    display: grid;
+    gap: 30px;
+}
+
+.date-selection, .results, .rut-calendar {
+    background: rgba(255, 255, 255, 0.98);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.date-selection h2, .results h2, .rut-calendar h2 {
+    color: #2c5f2d;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    border-bottom: 3px solid #4a7c59;
+    padding-bottom: 10px;
+}
+
+.date-inputs {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.input-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #2c5f2d;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #4a7c59;
+    box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.1);
+}
+
+.find-btn {
+    background: linear-gradient(135deg, #4a7c59 0%, #2c5f2d 100%);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.find-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.find-btn:active {
+    transform: translateY(0);
+}
+
+.wma-card {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 15px 0;
+    transition: all 0.3s;
+}
+
+.wma-card:hover {
+    border-color: #4a7c59;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.wma-card h3 {
+    color: #2c5f2d;
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+}
+
+.wma-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.info-item {
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    border-left: 4px solid #4a7c59;
+}
+
+.info-item strong {
+    color: #2c5f2d;
+}
+
+.match-score {
+    display: inline-block;
+    background: #4a7c59;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.calendar-legend {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.color-box {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+}
+
+.early-rut {
+    background: #ff6b6b;
+}
+
+.mid-rut {
+    background: #4ecdc4;
+}
+
+.late-rut {
+    background: #45b7d1;
+}
+
+.rut-timeline {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+.timeline-item {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    border-left: 4px solid #4a7c59;
+}
+
+@media (max-width: 768px) {
+    .app-header h1 {
+        font-size: 2rem;
+    }
+    
+    .date-inputs {
+        flex-direction: column;
+    }
+    
+    .calendar-legend {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .wma-info {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// Georgia WMA data with coordinates and county information
+const georgiaWMAs = [
+    {
+        name: "Altamaha WMA",
+        county: "Appling",
+        coordinates: { lat: 31.7348, lng: -82.4065 },
+        acres: 27219,
+        description: "Large coastal plain WMA known for deer, turkey, and waterfowl hunting"
+    },
+    {
+        name: "Cohutta WMA",
+        county: "Murray",
+        coordinates: { lat: 34.7276, lng: -84.6221 },
+        acres: 95000,
+        description: "Mountain WMA in North Georgia, excellent for deer and bear hunting"
+    },
+    {
+        name: "Chattahoochee WMA",
+        county: "Chattahoochee",
+        coordinates: { lat: 32.4609, lng: -84.8577 },
+        acres: 13200,
+        description: "River bottom WMA with mixed hardwood and pine forests"
+    },
+    {
+        name: "Clarks Hill WMA",
+        county: "McDuffie",
+        coordinates: { lat: 33.6501, lng: -82.1537 },
+        acres: 10224,
+        description: "Lake WMA managed by U.S. Army Corps of Engineers"
+    },
+    {
+        name: "B.F. Grant WMA",
+        county: "Floyd",
+        coordinates: { lat: 34.2321, lng: -85.1549 },
+        acres: 1125,
+        description: "Small mountain WMA near Rome, Georgia"
+    },
+    {
+        name: "Cedar Creek WMA",
+        county: "Bulloch",
+        coordinates: { lat: 32.4207, lng: -81.7340 },
+        acres: 15683,
+        description: "Coastal plain WMA with diverse wildlife habitat"
+    },
+    {
+        name: "Coleman River WMA",
+        county: "Randolph",
+        coordinates: { lat: 31.7276, lng: -84.7410 },
+        acres: 16238,
+        description: "Southwest Georgia WMA along the Chattahoochee River"
+    },
+    {
+        name: "Dawson Forest WMA",
+        county: "Dawson",
+        coordinates: { lat: 34.4426, lng: -84.1299 },
+        acres: 10670,
+        description: "North Georgia mountain WMA with excellent deer hunting"
+    },
+    {
+        name: "Di-Lane WMA",
+        county: "Telfair",
+        coordinates: { lat: 31.9023, lng: -83.1440 },
+        acres: 4893,
+        description: "Central Georgia WMA known for quality deer hunting"
+    },
+    {
+        name: "Flint River WMA",
+        county: "Dooly",
+        coordinates: { lat: 32.1543, lng: -83.7321 },
+        acres: 5903,
+        description: "River bottom WMA in central Georgia"
+    },
+    {
+        name: "Oconee WMA",
+        county: "Greene",
+        coordinates: { lat: 33.5707, lng: -83.1599 },
+        acres: 19119,
+        description: "Piedmont WMA with rolling hills and mixed forests"
+    },
+    {
+        name: "Paulk Pasture WMA",
+        county: "Irwin",
+        coordinates: { lat: 31.7854, lng: -83.2876 },
+        acres: 2847,
+        description: "South Georgia WMA with planted food plots"
+    },
+    {
+        name: "Rum Creek WMA",
+        county: "Bartow",
+        coordinates: { lat: 34.2454, lng: -84.8221 },
+        acres: 2876,
+        description: "North Georgia WMA near Cartersville"
+    },
+    {
+        name: "Sheffield WMA",
+        county: "Coweta",
+        coordinates: { lat: 33.3968, lng: -84.7849 },
+        acres: 2821,
+        description: "Piedmont WMA south of Atlanta"
+    },
+    {
+        name: "Tuckahoe WMA",
+        county: "Jones",
+        coordinates: { lat: 33.1107, lng: -83.5499 },
+        acres: 2893,
+        description: "Central Georgia WMA with diverse habitat"
+    }
+];
+
+// Georgia deer rut data by county with peak dates
+const rutData = {
+    "Appling": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Atkinson": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Bacon": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Baker": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Baldwin": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Banks": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Barrow": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Bartow": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Ben Hill": { start: "10/13", end: "10/19", peak: new Date(2024, 9, 16) },
+    "Berrien": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Bibb": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Bleckley": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Brantley": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Brooks": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Bryan": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Bulloch": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Burke": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Butts": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Calhoun": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Camden": { start: "10/13", end: "10/19", peak: new Date(2024, 9, 16) },
+    "Candler": { start: "10/13", end: "10/19", peak: new Date(2024, 9, 16) },
+    "Carroll": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Catoosa": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Charlton": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Chatham": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Chattahoochee": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Chattooga": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Cherokee": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Clarke": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Clay": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Clayton": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Clinch": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Cobb": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Coffee": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Colquitt": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Columbia": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Cook": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Coweta": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Crawford": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Crisp": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Dade": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Dawson": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Decatur": { start: "12/08", end: "12/14", peak: new Date(2024, 11, 11) },
+    "DeKalb": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Dodge": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Dooly": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Dougherty": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Douglas": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Early": { start: "12/15", end: "12/21", peak: new Date(2024, 11, 18) },
+    "Echols": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Effingham": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Elbert": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Emanuel": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Evans": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Fannin": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Fayette": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Floyd": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Forsyth": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Franklin": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Fulton": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Gilmer": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Glascock": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Glynn": { start: "10/13", end: "10/19", peak: new Date(2024, 9, 16) },
+    "Gordon": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Grady": { start: "12/08", end: "12/14", peak: new Date(2024, 11, 11) },
+    "Greene": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Gwinnett": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Habersham": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Hall": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Hancock": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Haralson": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Harris": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Hart": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Heard": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Henry": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Houston": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Irwin": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Jackson": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Jasper": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Jeff Davis": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Jefferson": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Jenkins": { start: "10/13", end: "10/19", peak: new Date(2024, 9, 16) },
+    "Johnson": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Jones": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Lamar": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Lanier": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Laurens": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Lee": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Liberty": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Lincoln": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Long": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Lowndes": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Lumpkin": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Macon": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Madison": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Marion": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "McDuffie": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "McIntosh": { start: "10/13", end: "10/19", peak: new Date(2024, 9, 16) },
+    "Meriwether": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Miller": { start: "12/15", end: "12/21", peak: new Date(2024, 11, 18) },
+    "Mitchell": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Monroe": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Montgomery": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Morgan": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Murray": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Muscogee": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Newton": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Oconee": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Oglethorpe": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Paulding": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Peach": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Pickens": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Pierce": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Pike": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Polk": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Pulaski": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Putnam": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Quitman": { start: "12/01", end: "12/07", peak: new Date(2024, 11, 4) },
+    "Rabun": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Randolph": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Richmond": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Rockdale": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Schley": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Screven": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Seminole": { start: "12/22", end: "12/28", peak: new Date(2024, 11, 25) },
+    "Spalding": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Stephens": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Stewart": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Sumter": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Talbot": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Taliaferro": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Tattnall": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Taylor": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Telfair": { start: "10/13", end: "10/19", peak: new Date(2024, 9, 16) },
+    "Terrell": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Thomas": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Tift": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Toombs": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Towns": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Treutlen": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Troup": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Turner": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Twiggs": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Union": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) },
+    "Upson": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Walker": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Walton": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Ware": { start: "10/20", end: "10/26", peak: new Date(2024, 9, 23) },
+    "Warren": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Washington": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Wayne": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Webster": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Wheeler": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "White": { start: "11/24", end: "11/30", peak: new Date(2024, 10, 27) },
+    "Whitfield": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Wilcox": { start: "11/10", end: "11/16", peak: new Date(2024, 10, 13) },
+    "Wilkes": { start: "11/03", end: "11/09", peak: new Date(2024, 10, 6) },
+    "Wilkinson": { start: "10/27", end: "11/02", peak: new Date(2024, 9, 30) },
+    "Worth": { start: "11/17", end: "11/23", peak: new Date(2024, 10, 20) }
+};
+
+// Utility functions
+function parseDate(dateString) {
+    const [month, day] = dateString.split('/');
+    return new Date(2024, parseInt(month) - 1, parseInt(day));
+}
+
+function formatDate(date) {
+    return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+    });
+}
+
+function calculateDateOverlap(userStart, userEnd, rutStart, rutEnd) {
+    const start = Math.max(userStart.getTime(), rutStart.getTime());
+    const end = Math.min(userEnd.getTime(), rutEnd.getTime());
+    
+    if (start <= end) {
+        return Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    }
+    return 0;
+}
+
+function calculateMatchScore(userStart, userEnd, wma) {
+    const county = wma.county;
+    const rutInfo = rutData[county];
+    
+    if (!rutInfo) return 0;
+    
+    const rutStart = parseDate(rutInfo.start);
+    const rutEnd = parseDate(rutInfo.end);
+    
+    const overlapDays = calculateDateOverlap(userStart, userEnd, rutStart, rutEnd);
+    const totalUserDays = Math.ceil((userEnd - userStart) / (1000 * 60 * 60 * 24)) + 1;
+    const totalRutDays = Math.ceil((rutEnd - rutStart) / (1000 * 60 * 60 * 24)) + 1;
+    
+    if (overlapDays === 0) {
+        // Calculate how close the dates are
+        const daysFromRut = Math.min(
+            Math.abs(userStart - rutEnd) / (1000 * 60 * 60 * 24),
+            Math.abs(rutStart - userEnd) / (1000 * 60 * 60 * 24)
+        );
+        return Math.max(0, 30 - daysFromRut);
+    }
+    
+    const overlapPercentage = (overlapDays / Math.max(totalUserDays, totalRutDays)) * 100;
+    return overlapPercentage;
+}
+
+function findBestWMAs(startDate, endDate) {
+    const userStart = new Date(startDate);
+    const userEnd = new Date(endDate);
+    
+    const scoredWMAs = georgiaWMAs.map(wma => {
+        const score = calculateMatchScore(userStart, userEnd, wma);
+        const rutInfo = rutData[wma.county];
+        
+        return {
+            ...wma,
+            score: score,
+            rutPeriod: rutInfo ? `${rutInfo.start} - ${rutInfo.end}` : 'Unknown',
+            matchType: score > 70 ? 'Excellent' : score > 40 ? 'Good' : score > 20 ? 'Fair' : 'Poor'
+        };
+    });
+    
+    return scoredWMAs.sort((a, b) => b.score - a.score);
+}
+
+function displayResults(wmas) {
+    const resultsContainer = document.getElementById('results-container');
+    const resultsSection = document.getElementById('results-section');
+    
+    if (wmas.length === 0) {
+        resultsContainer.innerHTML = '<p>No WMAs found for the selected dates.</p>';
+        return;
+    }
+    
+    const topWMAs = wmas.slice(0, 10); // Show top 10 results
+    
+    resultsContainer.innerHTML = topWMAs.map(wma => `
+        <div class="wma-card">
+            <div class="match-score">${wma.score.toFixed(0)}% Match - ${wma.matchType}</div>
+            <h3>${wma.name}</h3>
+            <p>${wma.description}</p>
+            <div class="wma-info">
+                <div class="info-item">
+                    <strong>County:</strong> ${wma.county}
+                </div>
+                <div class="info-item">
+                    <strong>Size:</strong> ${wma.acres.toLocaleString()} acres
+                </div>
+                <div class="info-item">
+                    <strong>Rut Peak:</strong> ${wma.rutPeriod}
+                </div>
+                <div class="info-item">
+                    <strong>Coordinates:</strong> ${wma.coordinates.lat.toFixed(4)}, ${wma.coordinates.lng.toFixed(4)}
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    resultsSection.style.display = 'block';
+    resultsSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+function displayRutCalendar() {
+    const calendarDisplay = document.getElementById('rut-calendar-display');
+    
+    // Group counties by rut period
+    const rutGroups = {};
+    Object.entries(rutData).forEach(([county, data]) => {
+        const period = `${data.start} - ${data.end}`;
+        if (!rutGroups[period]) {
+            rutGroups[period] = [];
+        }
+        rutGroups[period].push(county);
+    });
+    
+    // Sort by start date
+    const sortedPeriods = Object.keys(rutGroups).sort((a, b) => {
+        const dateA = parseDate(a.split(' - ')[0]);
+        const dateB = parseDate(b.split(' - ')[0]);
+        return dateA - dateB;
+    });
+    
+    const calendarHTML = sortedPeriods.map(period => {
+        const counties = rutGroups[period];
+        const startDate = parseDate(period.split(' - ')[0]);
+        let className = 'early-rut';
+        
+        if (startDate >= new Date(2024, 9, 27)) className = 'mid-rut';
+        if (startDate >= new Date(2024, 10, 17)) className = 'late-rut';
+        
+        return `
+            <div class="timeline-item" style="border-left-color: ${
+                className === 'early-rut' ? '#ff6b6b' : 
+                className === 'mid-rut' ? '#4ecdc4' : '#45b7d1'
+            }">
+                <strong>${period}</strong><br>
+                <small>${counties.length} counties: ${counties.slice(0, 8).join(', ')}${counties.length > 8 ? ` and ${counties.length - 8} more` : ''}</small>
+            </div>
+        `;
+    }).join('');
+    
+    calendarDisplay.innerHTML = `<div class="rut-timeline">${calendarHTML}</div>`;
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const findBtn = document.getElementById('find-wmas');
+    const startDateInput = document.getElementById('start-date');
+    const endDateInput = document.getElementById('end-date');
+    
+    // Set default dates to current hunting season
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    startDateInput.value = `${currentYear}-10-15`;
+    endDateInput.value = `${currentYear}-11-30`;
+    
+    findBtn.addEventListener('click', function() {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+        
+        if (!startDate || !endDate) {
+            alert('Please select both start and end dates.');
+            return;
+        }
+        
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('Start date must be before end date.');
+            return;
+        }
+        
+        const bestWMAs = findBestWMAs(startDate, endDate);
+        displayResults(bestWMAs);
+    });
+    
+    // Display the rut calendar on page load
+    displayRutCalendar();
+});
+</script>
+    "
